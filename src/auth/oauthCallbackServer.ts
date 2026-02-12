@@ -56,8 +56,36 @@ export class OAuthCallbackServer extends EventEmitter {
     const state = url.searchParams.get("state");
 
     if (!code || !state) {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end("<h1>Missing code or state parameter</h1>");
+      // OAuth server may return params as hash fragments (#code=...&state=...)
+      // which the browser never sends to the server. Serve a page that extracts
+      // them from the fragment and redirects with proper query parameters.
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(`<!DOCTYPE html>
+<html>
+<head><title>Swiggy MCP Bot - Authenticating</title></head>
+<body style="font-family: sans-serif; text-align: center; padding: 50px;">
+  <h1>Completing authentication...</h1>
+  <p id="status">Processing, please wait.</p>
+  <script>
+    (function() {
+      var hash = window.location.hash.substring(1);
+      if (hash) {
+        var params = new URLSearchParams(hash);
+        var code = params.get("code");
+        var state = params.get("state");
+        if (code && state) {
+          window.location.replace(
+            window.location.pathname + "?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state)
+          );
+          return;
+        }
+      }
+      document.getElementById("status").textContent =
+        "Authentication failed: missing code or state parameter. Please try /login again.";
+    })();
+  </script>
+</body>
+</html>`);
       return;
     }
 
