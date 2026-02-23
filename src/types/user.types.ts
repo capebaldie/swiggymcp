@@ -16,6 +16,8 @@ export interface UserSession {
   isAuthenticating: boolean;
   pendingAuthService?: SwiggyService;
   pendingAuthUrl?: string;
+  /** Cached Swiggy addressId per service (needed by search tools) */
+  addressIds?: Partial<Record<SwiggyService, string>>;
   createdAt: number;
   lastActiveAt: number;
 }

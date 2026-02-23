@@ -1,6 +1,8 @@
 import type { SwiggyService } from "../types/mcp.types.js";
 import type { SessionStore } from "../memory/sessionStore.js";
 import type { OAuthCallbackServer, AuthCallbackEvent } from "./oauthCallbackServer.js";
+import { SwiggyOAuthProvider } from "../mcp/oauthProvider.js";
+import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
 import { logger } from "../utils/logger.js";
 
 export interface AuthCompleteEvent {
@@ -17,15 +19,24 @@ export class TokenManager {
   private sessionStore: SessionStore;
   private callbackServer: OAuthCallbackServer;
   private onAuthComplete: AuthCompleteHandler;
+  private endpoints: Record<SwiggyService, string>;
+  private callbackPort: number;
+  private callbackHost: string;
 
   constructor(
     sessionStore: SessionStore,
     callbackServer: OAuthCallbackServer,
     onAuthComplete: AuthCompleteHandler,
+    endpoints: Record<SwiggyService, string>,
+    callbackPort: number,
+    callbackHost: string = "localhost",
   ) {
     this.sessionStore = sessionStore;
     this.callbackServer = callbackServer;
     this.onAuthComplete = onAuthComplete;
+    this.endpoints = endpoints;
+    this.callbackPort = callbackPort;
+    this.callbackHost = callbackHost;
 
     this.callbackServer.on("authCallback", (event: AuthCallbackEvent) => {
       this.handleCallback(event).catch((err) => {
@@ -58,23 +69,63 @@ export class TokenManager {
 
     this.sessionStore.removePendingFlow(state);
 
-    // The actual token exchange is handled by the MCP SDK's transport layer
-    // when we next try to connect. We store the auth code so the OAuthProvider
-    // can use it. For the MCP SDK flow, the transport handles the exchange
-    // automatically via the OAuthClientProvider.
+    // Exchange the authorization code for tokens using the MCP SDK's auth flow
+    try {
+      const oauthProvider = new SwiggyOAuthProvider(
+        flow.telegramUserId,
+        flow.service,
+        this.sessionStore,
+        this.callbackPort,
+        this.callbackHost,
+      );
 
-    // For now, we signal success — the actual token exchange happens when
-    // the MCP client connects with the code stored in the provider.
-    logger.info("OAuth callback received, signaling auth complete", {
-      userId: flow.telegramUserId,
-      service: flow.service,
-    });
+      const serverUrl = this.endpoints[flow.service];
+      const result = await auth(oauthProvider, {
+        serverUrl,
+        authorizationCode: code,
+      });
 
-    this.onAuthComplete({
-      userId: flow.telegramUserId,
-      chatId: flow.chatId,
-      service: flow.service,
-      success: true,
-    });
+      if (result === "AUTHORIZED") {
+        logger.info("OAuth token exchange successful", {
+          userId: flow.telegramUserId,
+          service: flow.service,
+        });
+
+        this.onAuthComplete({
+          userId: flow.telegramUserId,
+          chatId: flow.chatId,
+          service: flow.service,
+          success: true,
+        });
+      } else {
+        logger.warn("OAuth token exchange returned unexpected result", {
+          userId: flow.telegramUserId,
+          service: flow.service,
+          result,
+        });
+
+        this.onAuthComplete({
+          userId: flow.telegramUserId,
+          chatId: flow.chatId,
+          service: flow.service,
+          success: false,
+          error: "Token exchange failed. Please try /login again.",
+        });
+      }
+    } catch (err) {
+      logger.error("OAuth token exchange failed", {
+        userId: flow.telegramUserId,
+        service: flow.service,
+        error: String(err),
+      });
+
+      this.onAuthComplete({
+        userId: flow.telegramUserId,
+        chatId: flow.chatId,
+        service: flow.service,
+        success: false,
+        error: "Token exchange failed. Please try /login again.",
+      });
+    }
   }
 }

@@ -24,6 +24,7 @@ export class SwiggyOAuthProvider implements OAuthClientProvider {
   private sessionStore: SessionStore;
   private callbackPort: number;
   private callbackHost: string;
+  private oauthState?: string;
 
   constructor(
     userId: number,
@@ -31,12 +32,14 @@ export class SwiggyOAuthProvider implements OAuthClientProvider {
     sessionStore: SessionStore,
     callbackPort: number,
     callbackHost: string = "localhost",
+    oauthState?: string,
   ) {
     this.userId = userId;
     this.service = service;
     this.sessionStore = sessionStore;
     this.callbackPort = callbackPort;
     this.callbackHost = callbackHost;
+    this.oauthState = oauthState;
   }
 
   get redirectUrl(): string {
@@ -80,6 +83,10 @@ export class SwiggyOAuthProvider implements OAuthClientProvider {
       this.service,
       authorizationUrl.toString(),
     );
+  }
+
+  async state(): Promise<string> {
+    return this.oauthState ?? crypto.randomUUID();
   }
 
   async saveCodeVerifier(codeVerifier: string): Promise<void> {

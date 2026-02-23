@@ -36,6 +36,14 @@ ${toolDescriptions}
   "originalQuery": "<the user's original message>"
 }
 
+## CRITICAL — Tool Name and Parameter Matching:
+When tools are listed above in "Available Swiggy MCP Tools", you MUST:
+- Set "toolName" to the EXACT tool name from the list (e.g., "search_restaurants", "get_addresses")
+- Set "parameters" to match that tool's inputSchema EXACTLY — use the correct parameter names from the schema, not generic names like "query"
+- Study each tool's inputSchema carefully and populate all required fields
+- Price, delivery time, and dietary filters go in the "filters" object, NOT in "parameters" (unless the tool's inputSchema has those fields)
+- The few-shot examples below use toolName: null because they were created before tool discovery. IGNORE that pattern when real tools are available above.
+
 ## Rules:
 1. Extract ALL relevant parameters from the user's natural language.
 2. "under 200" or "below 200" or "less than 200" means maxPrice: 200.

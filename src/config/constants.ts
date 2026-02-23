@@ -44,6 +44,7 @@ Use /help for more commands.`,
 /login &lt;service&gt; - Connect Swiggy account (food, instamart, dineout)
 /logout &lt;service&gt; - Disconnect a service
 /status - Check which services are connected
+/details - Show account details, addresses, and available tools
 /clear - Clear conversation history
 /help - Show this message
 

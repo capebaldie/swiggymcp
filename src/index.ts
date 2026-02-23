@@ -38,6 +38,13 @@ async function main(): Promise<void> {
         event.error,
       );
     },
+    {
+      food: config.swiggyMcpFoodUrl,
+      instamart: config.swiggyMcpInstamartUrl,
+      dineout: config.swiggyMcpDineoutUrl,
+    },
+    config.oauthCallbackPort,
+    config.oauthCallbackHost,
   );
 
   // Start the bot

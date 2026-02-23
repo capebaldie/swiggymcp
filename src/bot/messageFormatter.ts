@@ -114,7 +114,7 @@ export class MessageFormatter {
     text += `\n`;
 
     if (result.filtersApplied.length > 0) {
-      text += `<i>Filters: ${result.filtersApplied.join(" | ")}</i>\n`;
+      text += `<i>Filters: ${this.escapeHtml(result.filtersApplied.join(" | "))}</i>\n`;
     }
     text += "\n";
 
@@ -196,7 +196,7 @@ export class MessageFormatter {
   private noResultsMessage(query: string, filters: string[]): FormattedMessage {
     let text = `No results found for "<b>${this.escapeHtml(query)}</b>"`;
     if (filters.length > 0) {
-      text += `\n\n<i>Filters applied: ${filters.join(", ")}</i>`;
+      text += `\n\n<i>Filters applied: ${this.escapeHtml(filters.join(", "))}</i>`;
     }
     text += `\n\nTry relaxing your filters or searching for something different.`;
     return { text, parseMode: "HTML" };
@@ -259,7 +259,7 @@ export class MessageFormatter {
     return text.substring(0, TELEGRAM_MAX_MESSAGE_LENGTH - 20) + "\n\n<i>... truncated</i>";
   }
 
-  private escapeHtml(text: string): string {
+  escapeHtml(text: string): string {
     return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

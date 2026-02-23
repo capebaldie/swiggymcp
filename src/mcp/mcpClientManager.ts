@@ -91,13 +91,14 @@ export class McpClientManager {
    * Creates a transport that will trigger OAuth, stores the auth URL.
    * Returns the auth URL for the bot to send to the user.
    */
-  async initiateAuth(userId: number, service: SwiggyService): Promise<string | null> {
+  async initiateAuth(userId: number, service: SwiggyService, state?: string): Promise<string | null> {
     const oauthProvider = new SwiggyOAuthProvider(
       userId,
       service,
       this.sessionStore,
       this.callbackPort,
       this.callbackHost,
+      state,
     );
 
     const url = new URL(this.endpoints[service]);

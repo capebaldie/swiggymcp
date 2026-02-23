@@ -58,7 +58,7 @@ export class OAuthCallbackServer extends EventEmitter {
     if (!code || !state) {
       // OAuth server may return params as hash fragments (#code=...&state=...)
       // which the browser never sends to the server. Serve a page that extracts
-      // them from the fragment and redirects with proper query parameters.
+      // them from the fragment and merges with any existing query params.
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(`<!DOCTYPE html>
 <html>
@@ -68,17 +68,15 @@ export class OAuthCallbackServer extends EventEmitter {
   <p id="status">Processing, please wait.</p>
   <script>
     (function() {
-      var hash = window.location.hash.substring(1);
-      if (hash) {
-        var params = new URLSearchParams(hash);
-        var code = params.get("code");
-        var state = params.get("state");
-        if (code && state) {
-          window.location.replace(
-            window.location.pathname + "?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state)
-          );
-          return;
-        }
+      var qp = new URLSearchParams(window.location.search);
+      var hp = new URLSearchParams(window.location.hash.substring(1));
+      var code = qp.get("code") || hp.get("code");
+      var state = qp.get("state") || hp.get("state");
+      if (code && state) {
+        window.location.replace(
+          window.location.pathname + "?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state)
+        );
+        return;
       }
       document.getElementById("status").textContent =
         "Authentication failed: missing code or state parameter. Please try /login again.";

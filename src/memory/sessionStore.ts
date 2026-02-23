@@ -108,6 +108,18 @@ export class SessionStore {
     this.pendingFlows.delete(state);
   }
 
+  // Address ID (needed by search tools like search_restaurants)
+  saveAddressId(userId: number, service: SwiggyService, addressId: string): void {
+    const session = this.sessions.get(userId);
+    if (!session) return;
+    if (!session.addressIds) session.addressIds = {};
+    session.addressIds[service] = addressId;
+  }
+
+  getAddressId(userId: number, service: SwiggyService): string | undefined {
+    return this.sessions.get(userId)?.addressIds?.[service];
+  }
+
   // Check authentication status
   isAuthenticated(userId: number, service: SwiggyService): boolean {
     return !!this.sessions.get(userId)?.oauthState[service]?.tokens;
